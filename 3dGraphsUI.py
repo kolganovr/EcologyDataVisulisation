@@ -19,8 +19,16 @@ root.title("3d Graphs")
 frame = ctk.CTkFrame(master=root)
 frame.pack(pady=20, padx=20, fill="both", expand=True)
 
-# Создаем список для хранения параметров
-parametrs = ["Гумус","P","K","Mn","Co","Cu","Zn","B","Ca","Mg","N_NH4","N_NO3","NDVI"]
+# Получение координат из файла
+data = pd.read_csv('data.csv')
+X = data[['X']]
+Y = data[['Y']]
+
+# Создаем список для хранения параметров из файла
+parametrs = []
+for column in data.columns:
+    if column != "X" and column != "Y":
+        parametrs.append(column)
 
 name = ""
 def optionmenu_callback(choice):
@@ -69,6 +77,16 @@ def makeGraph():
     plt.title(name)
     plt.show()
 
+width = 0.4
+# Создаем выпадающий список для выбора параметра
+optionmenu_var = ctk.StringVar(value="Выберите параметр")
+optionmenu = ctk.CTkOptionMenu(master=frame, values=parametrs,command=optionmenu_callback, variable=optionmenu_var, font=("Roboto", 14), state="disabled")
+optionmenu.place(relx=(1-width)/2, rely=0.2, relwidth=width, relheight=0.05)
+
+# Создаем кнопку для отображения графика
+button = ctk.CTkButton(master=frame, text="Построить график", command=makeGraph, font=("Roboto", 20, "bold"), state="disabled")
+button.place(relx=(1-width)/2, rely=0.7, relwidth=width, relheight=0.1)
+
 # Список для хранения высот
 elevations = []
 
@@ -81,25 +99,11 @@ def get_elevations_thread(latitude, longitude):
         print("Данные о высоте получены")
         optionmenu.configure(state="normal")
     else:
+        optionmenu.set("Ошибка, перезапустите с интернетом")
         raise Exception("Ошибка при получении данных о высоте. Возможно, отсутствует подключение к интернету")
-        
-# Получение координат из файла
-data = pd.read_csv('altitude.csv')
-X = data[['X']]
-Y = data[['Y']]
 
 # Запускаем поток для получения высоты
 elevation_thread = threading.Thread(target=get_elevations_thread, args=(Y['Y'], X['X']))
 elevation_thread.start()
-
-width = 0.4
-# Создаем выпадающий список для выбора параметра
-optionmenu_var = ctk.StringVar(value="Выберите параметр")
-optionmenu = ctk.CTkOptionMenu(master=frame, values=parametrs,command=optionmenu_callback, variable=optionmenu_var, font=("Roboto", 14), state="disabled")
-optionmenu.place(relx=(1-width)/2, rely=0.2, relwidth=width, relheight=0.05)
-
-# Создаем кнопку для отображения графика
-button = ctk.CTkButton(master=frame, text="Построить график", command=makeGraph, font=("Roboto", 20, "bold"), state="disabled")
-button.place(relx=(1-width)/2, rely=0.7, relwidth=width, relheight=0.1)
 
 root.mainloop()
